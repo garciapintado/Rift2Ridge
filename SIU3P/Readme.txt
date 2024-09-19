@@ -1,6 +1,15 @@
-SIU with pelagic and discontinuous layers
-
+%
+% Rift2Ridge geodynamics code was originally branched from MILAMIN,
+% and is distributed under GNU GPL v3.0, which inherits from MILAMIN GNU GPL v2.0 
+%
+% Below we provide the original copyright note from MILAMIN, and their notes on two dependencies,
+% which still apply for Rift2Rdidge:
+% - Triangle    : mesh generation
+% - SuiteSparse : numerical solvers
+%
 % ------------------------------------------------------------------------------
+%
+%
 %   MILAMIN: MATLAB-based FEM solver for large problems
 %
 %   Version 1.0
@@ -27,10 +36,7 @@ SIU with pelagic and discontinuous layers
 
     Below we provide instructions how to obtain and install Triangle mesh generator
     and SuiteSparse package that are required by MILAMIN. It is recommended to 
-    install an optional reordering package METIS and change BLAS used by MATLAB to
-    GotoBLAS in order to achieve best performance. Finally, we provide a list of 
-	MILAMIN files.
-	
+    install an optional reordering package METIS.
    
 ------------------------------------------
 1. Triangle
@@ -76,27 +82,6 @@ SIU with pelagic and discontinuous layers
 
    The packages required are CHOLMOD, AMD, and CSparse. For compiling instructions 
    see README files distributed with SuiteSparse. It is recommended to compile SuiteSparse
-   package with separete reordering package METIS that can be obtained here
+   package with separate reordering package METIS that can be obtained here
 
       http://glaros.dtc.umn.edu/gkhome/metis/metis/download
-
-
-------------------------------------------
-3. GotoBLAS
-   
-   It is recommended to change BLAS used by MATLAB to GotoBLAS that can be downloaded 
-   from
-
-      http://www.tacc.utexas.edu/resources/software/
-
-   First, compile GotoBLAS into a dynamically linked library (see GotoBLAS installation
-   instructions). Next, before running MATLAB set the following environment variable
-
-      BLAS_VERSION=<full path to GotoBLAS library>/<full name of .so library>
-
-   e.g. on linux you could write:
-
-      $ export BLAS_VERSION=/home/milamin/GotoBLAS/libgoto_opteron-r1.19.so
-
-   To verify that the desired BLAS version is indeed used, also set LAPACK_VERBOSITY=1.
-   During startup, MATLAB will print the names of libraries used.
