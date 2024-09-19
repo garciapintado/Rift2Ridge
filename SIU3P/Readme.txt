@@ -1,14 +1,13 @@
 %
-% Rift2Ridge geodynamics code was originally branched from MILAMIN,
-% and is distributed under GNU GPL v3.0, which inherits from MILAMIN GNU GPL v2.0 
+%   Rift2Ridge geodynamics code was originally branched from MILAMIN,
+%   and is distributed under GNU GPL v3.0, which inherits from MILAMIN GNU GPL v2.0 
 %
-% Below we provide the original copyright note from MILAMIN, and their notes on two dependencies,
-% which still apply for Rift2Rdidge:
-% - Triangle    : mesh generation
-% - SuiteSparse : numerical solvers
+%   Below we provide the original copyright note from MILAMIN, and their notes on two
+%   dependencies that apply for Rift2Ridge:
+%   - Triangle    : mesh generation
+%   - SuiteSparse : numerical solvers
 %
 % ------------------------------------------------------------------------------
-%
 %
 %   MILAMIN: MATLAB-based FEM solver for large problems
 %
