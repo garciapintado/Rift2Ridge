@@ -1,0 +1,553 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>function_sealand</title><meta name="generator" content="MATLAB 9.5"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-06-26"><meta name="DC.source" content="function_sealand.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><pre class="codeinput"><span class="keyword">function</span> [Z] = function_sealand(Z,no_nodes,S,MM_loc,De,nexp,dt,kappa, <span class="keyword">...</span>
+    Dx,sealevel,ksea,kappa_s,kdecay,q_bc,lriver,nip,nnodel)
+<span class="comment">% [Z] = FUNCTION_SEALAND(Z,NO_NODES,F_LOC,MM_LOC,DE,NEXP,DT,DX,SEALEVEL,</span>
+<span class="comment">% KSEA,KDEKAY) calculates a new topography Z solving with FEM the</span>
+<span class="comment">% sediment transport partial differential equation. This</span>
+<span class="comment">% model can solve all together linear hill-slope diffusion, fluvial</span>
+<span class="comment">% sediment transport and submarine sediment transport. Z in the output is</span>
+<span class="comment">% the topography after the time step, Z in the input is the topography</span>
+<span class="comment">% before the time step, no_nodes is the number of nodes, F_loc is the</span>
+<span class="comment">% source and Neuman's boundary conditions added together, MM_loc is a part</span>
+<span class="comment">% of the Stiffness matrix containing the integration of the multiplication</span>
+<span class="comment">% of the shape functions evaluated at the integration points, DE is the</span>
+<span class="comment">% fluvial transport coefficient(c x alpha^nexp), NEXP is the exponent of</span>
+<span class="comment">% the water flux for fluvial transport, DT is the time step, DX is a vector</span>
+<span class="comment">% of element sizes, SEALEVEL is the sea level, KSEA is</span>
+<span class="comment">% the submarine diffusion coefficient and KDECAY is the parameter that</span>
+<span class="comment">% conditions the decay of KSEA with the water depth. FEM is done here with</span>
+<span class="comment">% linear shape functions and 2 integration points. This function cannot be</span>
+<span class="comment">% used at its current state with different shape functions and integration</span>
+<span class="comment">% points.</span>
+
+<span class="comment">% Author: John Armitage, Institut de Physique du Globe de Paris</span>
+<span class="comment">%</span>
+<span class="comment">% Edited: Miguel Andres-Martinez, University of Bremen</span>
+<span class="comment">%         andresma@uni-bremen.de</span>
+
+<span class="comment">%==========================================================================</span>
+<span class="comment">% INITIALIZATION</span>
+<span class="comment">%==========================================================================</span>
+
+<span class="comment">% Calculate number of elements</span>
+no_el       = no_nodes-1;
+<span class="comment">% Nodes per element</span>
+no_nodes_el = 2;
+
+<span class="comment">% Coordinates X</span>
+X = [0; cumsum(Dx)];
+XX = X;
+
+<span class="comment">% Connectivity matrix</span>
+nodes   = [(1:no_nodes-1)' (2:no_nodes)'];
+<span class="comment">% Initialize diffusivity coefficient (different for each element)</span>
+<span class="comment">% ((d1+d2)/2) where d1 is the diffusivity in local node 1 and d2 in local</span>
+<span class="comment">% node 2</span>
+D       = zeros(no_el,1);
+
+<span class="comment">% Integration points</span>
+<span class="keyword">if</span> nip==1
+    IP_x{1} = 0;
+    w{1} = 2;
+<span class="keyword">elseif</span> nip==2
+    IP_x{1} = -sqrt(1/3);
+    IP_x{2} = sqrt(1/3);
+    w{1} = 1;
+    w{2} = 1;
+<span class="keyword">elseif</span> nip==3
+    IP_x{1} = -sqrt(3/5);
+    IP_x{2} = 0;
+    IP_x{3} = sqrt(3/5);
+    w{1} = 5/9;
+    w{2} = 8/9;
+    w{3} = 5/9;
+<span class="keyword">end</span>
+
+<span class="comment">% Shape functions</span>
+<span class="keyword">if</span> nnodel==2
+    <span class="keyword">for</span> ip = 1:nip
+        N{ip} = [1/2*(1-IP_x{ip}) 1/2*(1+IP_x{ip})];
+        dNdx{ip} = [-1/2 1/2];
+    <span class="keyword">end</span>
+<span class="keyword">elseif</span> nnodel==3
+    <span class="keyword">for</span> ip = 1:nip
+        N{ip} = [1/2*IP_x{ip}.*(IP_x{ip}-1) 1-IP_x{ip}.^2 1/2*IP_x{ip}.*(IP_x{ip}+1)];
+        dNdx{ip} = [IP_x{ip}-1 -2*IP_x{ip} IP_x{ip}+1];
+    <span class="keyword">end</span>
+    X = [X; (X(1:end-1)+X(2:end))/2];
+    nodes = [nodes (no_nodes+(1:no_el))'];
+<span class="keyword">end</span>
+
+<span class="comment">%==========================================================================</span>
+<span class="comment">% CALCULATE THE SLOPE DIRECTION AND WATER FLUX</span>
+<span class="comment">%==========================================================================</span>
+[x,sortx] = sort(X);
+z = interp1(XX,Z,x);
+dx = diff(x);
+<span class="comment">% Water flux</span>
+Dx_sign = -dx.*(sign(diff(z)));
+<span class="comment">% diff(Z) explained</span>
+<span class="comment">% -----------------</span>
+<span class="comment">%</span>
+<span class="comment">%                       . Z4 = 5</span>
+<span class="comment">%                      /          Z       = topography defined in the nodes</span>
+<span class="comment">%           .Z1 = 1   /           diff(z) = defined in each element</span>
+<span class="comment">%          / \       . Z3 = 0</span>
+<span class="comment">%         /   \     /</span>
+<span class="comment">%              \   /</span>
+<span class="comment">%               \.Z2 = -1</span>
+<span class="comment">%</span>
+<span class="comment">% diff(Z) = [-2     1   5]</span>
+<span class="comment">%</span>
+<span class="comment">% sign(diff(Z)) returns a vector of ones with the sign of diff(Z):</span>
+<span class="comment">%   sign(diff(Z)) = [-1 1 1]</span>
+
+<span class="comment">% Find top of the hills and depocenter nodes</span>
+indx = [find(diff(diff(z)&gt;0)~=0)+1; length(z)];
+<span class="comment">% figure(2); clf</span>
+<span class="comment">% plot(X,Z,'o-')</span>
+<span class="comment">% hold on</span>
+<span class="comment">% plot(X(indx),Z(indx),'x')</span>
+
+X_d = zeros(size(x));
+ind0 = 1;
+<span class="keyword">for</span> n = 1:length(indx)
+    inde            = indx(n);
+    dx_sign         = Dx_sign(ind0:inde-1);
+    length_river    = sum(dx_sign);
+
+    <span class="comment">% Calculate X_d</span>
+    <span class="keyword">if</span> all(dx_sign&lt;0)
+        x_dn = cumsum([0; dx_sign])-length_river;
+    <span class="keyword">elseif</span> all(dx_sign&gt;0)
+        x_dn = cumsum([0; dx_sign]);
+    <span class="keyword">else</span>
+        error(<span class="string">'Bad calculation of distance to the drainage divide'</span>)
+    <span class="keyword">end</span>
+
+    <span class="comment">% Check outer rivers</span>
+    <span class="comment">% ------------------</span>
+    <span class="comment">% Left river</span>
+    <span class="keyword">if</span> ind0==1 &amp;&amp; n==1 &amp;&amp; all(dx_sign&gt;0)
+        <span class="comment">% Then river out of the model flows in the same direction of the</span>
+        <span class="comment">% left river in the model</span>
+        x_dn    = x_dn+lriver(1);
+    <span class="keyword">end</span>
+    <span class="comment">% Right river</span>
+    <span class="keyword">if</span> inde==indx(end) &amp;&amp; n==length(indx) &amp;&amp; all(dx_sign&lt;0)
+        <span class="comment">% Then river out of the model flows in the same direction of the</span>
+        <span class="comment">% left river in the model</span>
+        x_dn    = x_dn-lriver(2);
+    <span class="keyword">end</span>
+
+    <span class="comment">%x_dn([1 end]) = 0;</span>
+    X_d(ind0:inde) = x_dn;
+    ind0 = inde;
+<span class="keyword">end</span>
+
+X_d(sortx) = X_d;
+z(sortx) = z;
+x(sortx) = x;
+
+Dn = zeros(size(X));
+<span class="comment">% Fluvial transport diffusivity defined in the nodes</span>
+Dn = kappa + De*(X_d.^nexp);
+<span class="comment">% Submarine transport diffusivity defined in the nodes</span>
+Dn(z&lt;sealevel) = kappa_s+ksea*exp(-kdecay*abs(sealevel-z(z&lt;sealevel))); <span class="comment">%+1/365.25/24/3600;</span>
+<span class="comment">% % Averaging of the diffusion coefficient</span>
+<span class="comment">% if avrg_diff</span>
+<span class="comment">%     Dn = [Dn(1:2); (Dn(1:end-4)+Dn(2:end-3)+Dn(3:end-2)+Dn(4:end-1)+Dn(5:end))/3; Dn(end-1:end)];</span>
+<span class="comment">% end</span>
+
+
+<span class="comment">% Diffusivity in the integration points</span>
+D = (Dn(1:end-1)+Dn(2:end))/2;
+
+<span class="comment">% Setup system matrix</span>
+KM          = zeros(no_nodes,no_nodes);
+MM          = zeros(no_nodes,no_nodes);
+F           = zeros(no_nodes,1);
+
+<span class="comment">% % Plot diffusivity and scaled topography with sealevel</span>
+<span class="comment">% figure(3); clf</span>
+<span class="comment">% line([min(x) max(x)],[sealevel sealevel],'LineStyle','--')</span>
+<span class="comment">% hold on</span>
+<span class="comment">% line(x,z,'Color',[0.85 0.325 0.098],'Marker','.','MarkerSize',10)</span>
+<span class="comment">% ax1 = gca; % current axes</span>
+<span class="comment">% ax1_pos = ax1.Position;</span>
+<span class="comment">% ax2 = axes('Position',ax1_pos,'XAxisLocation','top','YAxisLocation', ...</span>
+<span class="comment">%     'right','Color','none');</span>
+<span class="comment">% linkaxes([ax1 ax2],'x')</span>
+<span class="comment">% line(x,Dn,'Parent',ax2,'Color','k','Marker','.','MarkerSize',10)</span>
+<span class="comment">% grid on</span>
+<span class="comment">% drawnow</span>
+
+<span class="keyword">for</span> iel=1:no_el
+    <span class="keyword">if</span> nip&gt;0
+        KM_loc = zeros(nnodel,nnodel);
+        MM_loc = zeros(nnodel,nnodel);
+        F_loc  = zeros(nnodel,1);
+        <span class="keyword">for</span> ip = 1:nip
+            KM_loc = KM_loc + dNdx{ip}'*N{ip}*Dn(nodes(iel,:))*dNdx{ip}*2/Dx(iel)*w{ip};
+            MM_loc = MM_loc + N{ip}'*N{ip}/2*w{ip};
+
+            F_loc = F_loc + N{ip}'*N{ip}*S(nodes(iel,:))'*Dx(iel)/2*w{ip};
+        <span class="keyword">end</span>
+    <span class="keyword">else</span>
+        KM_loc       = D(iel)*[1/Dx(iel) -1/Dx(iel); -1/Dx(iel) 1/Dx(iel)];
+    <span class="keyword">end</span>
+
+    <span class="keyword">for</span> i=1:no_nodes_el
+        ii                              = nodes(iel,i);
+        <span class="keyword">for</span> j=1:no_nodes_el
+            jj                          = nodes(iel,j);
+            KM(ii,jj)                   = KM(ii,jj) + KM_loc(i,j);
+            MM(ii,jj)                   = MM(ii,jj) + Dx(iel)*MM_loc(i,j); <span class="comment">%%%NEW%%%</span>
+        <span class="keyword">end</span>
+        F(ii)                           = F(ii)     + F_loc(i);
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+F_tot                                   =       F   + 1/dt*MM*Z; <span class="comment">%%%NEW%%%</span>
+<span class="comment">% Add Neumann</span>
+F_tot([1 end]) = F_tot([1 end]) + q_bc';
+KK_TOT                                  = 1/dt*MM   +      KM; <span class="comment">%%%NEW%%%</span>
+
+<span class="comment">% zero gradient</span>
+
+U                     = chol(KK_TOT);
+L                     = U';
+
+Z                     = U\(L\F_tot);
+
+<span class="comment">% Dirichlet</span>
+
+<span class="comment">% Free                 = 1:no_nodes;</span>
+<span class="comment">% Free([1 no_nodes])   = [];</span>
+<span class="comment">% Z                    = zeros(no_nodes,1);</span>
+<span class="comment">% Z([1 no_nodes])      = [0 0];</span>
+<span class="comment">% F_tot                = F_tot - KK_TOT*Z;</span>
+<span class="comment">%</span>
+<span class="comment">% U                    = chol(KK_TOT(Free,Free));</span>
+<span class="comment">% L                    = U';</span>
+<span class="comment">%</span>
+<span class="comment">% Z(Free)              = U\(L\F_tot(Free));</span>
+
+<span class="comment">% line(x,Z,'Parent',ax1,'Color','g','Marker','.','MarkerSize',10)</span>
+<span class="comment">% drawnow</span>
+
+<span class="keyword">end</span>
+</pre><pre class="codeoutput error">Not enough input arguments.
+
+Error in function_sealand (line 32)
+no_el       = no_nodes-1;
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2018b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+function [Z] = function_sealand(Z,no_nodes,S,MM_loc,De,nexp,dt,kappa, ...
+    Dx,sealevel,ksea,kappa_s,kdecay,q_bc,lriver,nip,nnodel)
+% [Z] = FUNCTION_SEALAND(Z,NO_NODES,F_LOC,MM_LOC,DE,NEXP,DT,DX,SEALEVEL,
+% KSEA,KDEKAY) calculates a new topography Z solving with FEM the 
+% sediment transport partial differential equation. This
+% model can solve all together linear hill-slope diffusion, fluvial
+% sediment transport and submarine sediment transport. Z in the output is
+% the topography after the time step, Z in the input is the topography
+% before the time step, no_nodes is the number of nodes, F_loc is the
+% source and Neuman's boundary conditions added together, MM_loc is a part
+% of the Stiffness matrix containing the integration of the multiplication
+% of the shape functions evaluated at the integration points, DE is the
+% fluvial transport coefficient(c x alpha^nexp), NEXP is the exponent of
+% the water flux for fluvial transport, DT is the time step, DX is a vector
+% of element sizes, SEALEVEL is the sea level, KSEA is
+% the submarine diffusion coefficient and KDECAY is the parameter that
+% conditions the decay of KSEA with the water depth. FEM is done here with
+% linear shape functions and 2 integration points. This function cannot be
+% used at its current state with different shape functions and integration
+% points.
+
+% Author: John Armitage, Institut de Physique du Globe de Paris
+%
+% Edited: Miguel Andres-Martinez, University of Bremen
+%         andresma@uni-bremen.de
+
+%==========================================================================
+% INITIALIZATION
+%==========================================================================
+
+% Calculate number of elements
+no_el       = no_nodes-1;
+% Nodes per element
+no_nodes_el = 2;
+
+% Coordinates X
+X = [0; cumsum(Dx)];
+XX = X;
+
+% Connectivity matrix
+nodes   = [(1:no_nodes-1)' (2:no_nodes)'];
+% Initialize diffusivity coefficient (different for each element) 
+% ((d1+d2)/2) where d1 is the diffusivity in local node 1 and d2 in local
+% node 2
+D       = zeros(no_el,1);
+
+% Integration points
+if nip==1
+    IP_x{1} = 0;
+    w{1} = 2;
+elseif nip==2
+    IP_x{1} = -sqrt(1/3);
+    IP_x{2} = sqrt(1/3);
+    w{1} = 1;
+    w{2} = 1;
+elseif nip==3
+    IP_x{1} = -sqrt(3/5);
+    IP_x{2} = 0;
+    IP_x{3} = sqrt(3/5);
+    w{1} = 5/9;
+    w{2} = 8/9;
+    w{3} = 5/9;
+end
+
+% Shape functions
+if nnodel==2
+    for ip = 1:nip
+        N{ip} = [1/2*(1-IP_x{ip}) 1/2*(1+IP_x{ip})];
+        dNdx{ip} = [-1/2 1/2];
+    end
+elseif nnodel==3
+    for ip = 1:nip
+        N{ip} = [1/2*IP_x{ip}.*(IP_x{ip}-1) 1-IP_x{ip}.^2 1/2*IP_x{ip}.*(IP_x{ip}+1)];
+        dNdx{ip} = [IP_x{ip}-1 -2*IP_x{ip} IP_x{ip}+1];
+    end
+    X = [X; (X(1:end-1)+X(2:end))/2];
+    nodes = [nodes (no_nodes+(1:no_el))'];
+end
+
+%==========================================================================
+% CALCULATE THE SLOPE DIRECTION AND WATER FLUX
+%==========================================================================
+[x,sortx] = sort(X);
+z = interp1(XX,Z,x);
+dx = diff(x);
+% Water flux
+Dx_sign = -dx.*(sign(diff(z)));
+% diff(Z) explained
+% REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+%
+%                       . Z4 = 5
+%                      /          Z       = topography defined in the nodes
+%           .Z1 = 1   /           diff(z) = defined in each element
+%          / \       . Z3 = 0
+%         /   \     /
+%              \   /
+%               \.Z2 = -1
+%
+% diff(Z) = [-2     1   5]
+%
+% sign(diff(Z)) returns a vector of ones with the sign of diff(Z):
+%   sign(diff(Z)) = [-1 1 1]
+
+% Find top of the hills and depocenter nodes
+indx = [find(diff(diff(z)>0)~=0)+1; length(z)];
+% figure(2); clf
+% plot(X,Z,'o-')
+% hold on
+% plot(X(indx),Z(indx),'x')
+
+X_d = zeros(size(x));
+ind0 = 1;
+for n = 1:length(indx)
+    inde            = indx(n);
+    dx_sign         = Dx_sign(ind0:inde-1);
+    length_river    = sum(dx_sign);
+    
+    % Calculate X_d
+    if all(dx_sign<0)
+        x_dn = cumsum([0; dx_sign])-length_river;
+    elseif all(dx_sign>0)
+        x_dn = cumsum([0; dx_sign]);
+    else
+        error('Bad calculation of distance to the drainage divide')
+    end
+    
+    % Check outer rivers
+    % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+    % Left river
+    if ind0==1 && n==1 && all(dx_sign>0)
+        % Then river out of the model flows in the same direction of the
+        % left river in the model
+        x_dn    = x_dn+lriver(1);
+    end
+    % Right river
+    if inde==indx(end) && n==length(indx) && all(dx_sign<0)
+        % Then river out of the model flows in the same direction of the
+        % left river in the model
+        x_dn    = x_dn-lriver(2);
+    end
+
+    %x_dn([1 end]) = 0;
+    X_d(ind0:inde) = x_dn;
+    ind0 = inde;
+end
+
+X_d(sortx) = X_d;
+z(sortx) = z;
+x(sortx) = x;
+
+Dn = zeros(size(X));
+% Fluvial transport diffusivity defined in the nodes
+Dn = kappa + De*(X_d.^nexp);
+% Submarine transport diffusivity defined in the nodes
+Dn(z<sealevel) = kappa_s+ksea*exp(-kdecay*abs(sealevel-z(z<sealevel))); %+1/365.25/24/3600;
+% % Averaging of the diffusion coefficient
+% if avrg_diff
+%     Dn = [Dn(1:2); (Dn(1:end-4)+Dn(2:end-3)+Dn(3:end-2)+Dn(4:end-1)+Dn(5:end))/3; Dn(end-1:end)];
+% end
+
+
+% Diffusivity in the integration points
+D = (Dn(1:end-1)+Dn(2:end))/2;
+
+% Setup system matrix
+KM          = zeros(no_nodes,no_nodes);
+MM          = zeros(no_nodes,no_nodes);
+F           = zeros(no_nodes,1);
+
+% % Plot diffusivity and scaled topography with sealevel
+% figure(3); clf
+% line([min(x) max(x)],[sealevel sealevel],'LineStyle','REPLACE_WITH_DASH_DASH')
+% hold on
+% line(x,z,'Color',[0.85 0.325 0.098],'Marker','.','MarkerSize',10)
+% ax1 = gca; % current axes
+% ax1_pos = ax1.Position;
+% ax2 = axes('Position',ax1_pos,'XAxisLocation','top','YAxisLocation', ...
+%     'right','Color','none');
+% linkaxes([ax1 ax2],'x')
+% line(x,Dn,'Parent',ax2,'Color','k','Marker','.','MarkerSize',10)
+% grid on
+% drawnow
+
+for iel=1:no_el
+    if nip>0
+        KM_loc = zeros(nnodel,nnodel);
+        MM_loc = zeros(nnodel,nnodel);
+        F_loc  = zeros(nnodel,1);
+        for ip = 1:nip
+            KM_loc = KM_loc + dNdx{ip}'*N{ip}*Dn(nodes(iel,:))*dNdx{ip}*2/Dx(iel)*w{ip};
+            MM_loc = MM_loc + N{ip}'*N{ip}/2*w{ip};
+            
+            F_loc = F_loc + N{ip}'*N{ip}*S(nodes(iel,:))'*Dx(iel)/2*w{ip};
+        end
+    else
+        KM_loc       = D(iel)*[1/Dx(iel) -1/Dx(iel); -1/Dx(iel) 1/Dx(iel)];
+    end
+    
+    for i=1:no_nodes_el
+        ii                              = nodes(iel,i);
+        for j=1:no_nodes_el
+            jj                          = nodes(iel,j);
+            KM(ii,jj)                   = KM(ii,jj) + KM_loc(i,j);
+            MM(ii,jj)                   = MM(ii,jj) + Dx(iel)*MM_loc(i,j); %%%NEW%%%
+        end
+        F(ii)                           = F(ii)     + F_loc(i);
+    end
+end
+
+F_tot                                   =       F   + 1/dt*MM*Z; %%%NEW%%%
+% Add Neumann
+F_tot([1 end]) = F_tot([1 end]) + q_bc';
+KK_TOT                                  = 1/dt*MM   +      KM; %%%NEW%%%
+
+% zero gradient
+
+U                     = chol(KK_TOT);
+L                     = U';
+
+Z                     = U\(L\F_tot);
+
+% Dirichlet
+
+% Free                 = 1:no_nodes;
+% Free([1 no_nodes])   = [];
+% Z                    = zeros(no_nodes,1);
+% Z([1 no_nodes])      = [0 0];
+% F_tot                = F_tot - KK_TOT*Z;
+% 
+% U                    = chol(KK_TOT(Free,Free));
+% L                    = U';
+% 
+% Z(Free)              = U\(L\F_tot(Free));
+
+% line(x,Z,'Parent',ax1,'Color','g','Marker','.','MarkerSize',10)
+% drawnow
+
+end
+
+##### SOURCE END #####
+--></body></html>

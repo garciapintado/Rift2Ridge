@@ -1,0 +1,56 @@
+This is a public version of Rift2Ridge, a FEM code for research in geodynamics
+
+For features non yet publicly available, in development under current research, or any other request, please contact
+The Geophysics-Geodynamic group in MARUM, University of Bremen via either of:
+Prof. Dr. Marta Perez-Gussinye: mpgussinye@marum.de
+Dr. Javier García-Pintado:  jgarciapintado@marum.de
+
+- Model general setup
+---
+A number of environment variables need to be defined in the shell. Also python3 must be available. This, along with an example of their definition in a .bash_profile file for an iMAC computer is as:
+
+export MATLABROOT="/Applications/MATLAB_R2018b.app"                   # path to matlab binary
+export PATH=$PATH:$MATLABROOT/bin:$HOME/bin                           # add matlab path to path
+export WORK=$HOME/scratch                                             # path to model output
+export MUTILS_PATH=$HOME/Library/MatlabLib/mutils-0.4-2               # path to utilities used by the code
+export SSPARSE_PATH=$HOME/Library/MatlabLib/SuiteSparse               # path to sparse matrix operations
+
+export TRIANGLE_PATH=$HOME/Library/MatlabLib/triangle                 # path to 2D triangle mesh generation
+export PATH=$PATH:$TRIANGLE_PATH                                      # add triangle path (where the actual "triangle" binary resides) to path
+export PATH="$PATH:$HOME/Library/Python/3.7/bin"                      # add python3 path to path 
+
+- Model input
+---
+The path to the input folder has the tree:
+$dsnmod/data/$region/$event/$meshnam/$nnn
+
+Input is given within the SIU3P/data folder in structured directories. As an example, a data input folder, under SIU3P/data, from parent to child,
+a folder structure may look like: 
+region  = "MAR";
+event   = "sp2";
+meshnam = "ucr1000";
+nnn     = "001";
+
+Within the last child folder 'nnn', user-specific input files are given, overriding default values:
+call_main.m       # definition of the input folder tree and call to main.m
+change_model.m    # modifications, at initialisation, to param_defaults()
+readCASE.m        # components and COMPSET definition (used by param_defaults)
+readCF.m          # input for data-assimilation [DA] options - needed but DA not still publicly available
+update_model.m    # modifications to existing parameters for "continuation" of runs in different computers or "branching"
+readMC.m          # Monte-Carlo input
+
+A minimal example is provided under SIU3P/data
+
+- Model run
+---
+In iMAC / linux, for Matlab to gather the environment variables, a run has to be launched from the shell at the input data folder as:
+
+$matlab & # interactive session
+$matlab -nosplash -nodisplay -batch "pid=0;call_main" -logfile rift2ridge.log # batch mode
+
+A bash script is provided with  an example of how run Rift2Ridge in a computing cluster managed by SLURM
+
+- Model component selection
+---
+A component-based selection in the readCASE.m file in the data input folder for the simulation creates the COMPSET.
+The COMPSET is then used by param_defaults() to select blocks of parameters relating to the various components.

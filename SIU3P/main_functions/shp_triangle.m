@@ -1,0 +1,43 @@
+function  [SHP] = shp_triangle(ipx, nnodel)
+%SHP_DERIV_TRIANGLE Shape functions with respect to local coordinates
+%  Supports 3,6, and 7 node triangular elements 
+
+%   Part of MILAMIN: MATLAB-based FEM solver for large problems, Version 1.0
+%   Copyright (C) 2007, M. Dabrowski, M. Krotkiewski, D.W. Schmid
+%   University of Oslo, Physics of Geological Processes
+%   http://milamin.org
+%   See License file for terms of use.
+
+    eta2 = ipx(:,1);
+    eta3 = ipx(:,2);
+    eta1 = 1-eta2-eta3;
+
+    switch nnodel;
+        case 3
+            SHP   = [eta1 ...
+                     eta2...
+                     eta3]';
+        case 6
+            SHP = [eta1.*(2*eta1-1) ...
+                   eta2.*(2*eta2-1) ...
+                   eta3.*(2*eta3-1) ...
+                       4*eta2.*eta3 ...
+                       4*eta1.*eta3 ...
+                       4*eta1.*eta2]';
+
+           
+        case 7
+            SHP = [eta1.*(2*eta1-1)+ 3*eta1.*eta2.*eta3 ...
+                   eta2.*(2*eta2-1)+ 3*eta1.*eta2.*eta3 ...
+                   eta3.*(2*eta3-1)+ 3*eta1.*eta2.*eta3 ...
+                     4*eta2.*eta3 - 12*eta1.*eta2.*eta3 ...
+                     4*eta1.*eta3 - 12*eta1.*eta2.*eta3 ...
+                     4*eta1.*eta2 - 12*eta1.*eta2.*eta3 ...
+                                    27*eta1.*eta2.*eta3]';
+
+        otherwise
+            error('Unknown element')
+
+    end
+	
+

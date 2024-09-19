@@ -1,0 +1,884 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>layer_collapse</title><meta name="generator" content="MATLAB 9.5"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-06-27"><meta name="DC.source" content="layer_collapse.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><pre class="codeinput"><span class="keyword">function</span> [GEOMETRY,Geo_id,remesh,layer_corr] = <span class="keyword">...</span>
+            layer_collapse(GEOMETRY,Geo_id,Base,remesh,shift)
+<span class="comment">% [GEOMETRY,GEO_ID,REMESH,LAYER_CORR] = layer_collapse(GEOMETRY,GEO_ID,</span>
+<span class="comment">% BASE,REMESH,SHIFT) takes the horizontal interfaces defined by GEOMETRY</span>
+<span class="comment">% and GEO_ID, find where they interfere, or get vertically closer than</span>
+<span class="comment">% SHIFT and merge these interfaces together. Collapsing of interfaces makes</span>
+<span class="comment">% Triangle library to understand that it should not generate elements for</span>
+<span class="comment">% the collapsed layer in this area, so that discontinuous layers are</span>
+<span class="comment">% created. In this way a reduction of the number of excesively</span>
+<span class="comment">% small elements is achieved together with the reduction of the ammount of</span>
+<span class="comment">% times remesh is needed. The function returns GEOMETRY and GEO_ID modified</span>
+<span class="comment">% with the interface collapse and REMESH and LAYER_CORR indicating if</span>
+<span class="comment">% interface correction had occured (LAYER_CORR = 1) and if remesh should be</span>
+<span class="comment">% triggered (REMESH = 1). When BASE is the top basement coordinates (and</span>
+<span class="comment">% not empty) updates the upper layer (i.e. the crust) to be of the same</span>
+<span class="comment">% thickness of the sediments when sediment thickness is &gt;= SHIFT.</span>
+<span class="comment">%</span>
+<span class="comment">% Note I: It is recommended that SHIFT is bigger than at least 1/5 of the</span>
+<span class="comment">% maximum resolution of the interfaces to avoid elements with high angles</span>
+<span class="comment">% and constant remeshings (i.e. where resolution at interfaces is 1 km</span>
+<span class="comment">% SHIFT should be at lease 200 m).</span>
+<span class="comment">%</span>
+<span class="comment">% Note II: This algorithm can only work with layers that have at least 4</span>
+<span class="comment">% interfaces, because of the numbering assumed for the indentification of</span>
+<span class="comment">% interfaces 1 and 2.</span>
+<span class="comment">%</span>
+<span class="comment">% For this, the function finds intersections of the upper interfaces (2)</span>
+<span class="comment">% with the lower interfaces (1) + SHIFT. This intersections are then used</span>
+<span class="comment">% to define segments where interface 1 + SHIFT is above interface 2, and</span>
+<span class="comment">% poitns surrounding the intersections (i11,i12,i21,i22). Then, points</span>
+<span class="comment">% between i11 and i12 are substituted by points between i21 and i22</span>
+<span class="comment">% (including them).</span>
+<span class="comment">%</span>
+<span class="comment">% Initial state:</span>
+<span class="comment">%___.____.                           .____ Interphase 2</span>
+<span class="comment">%         \                         /</span>
+<span class="comment">%          \    .______.____.______/_.____ Interphase 1 + SHIFT</span>
+<span class="comment">%           \  /                  /  i12</span>
+<span class="comment">%            \/                  /</span>
+<span class="comment">%            /\.______.____.___./</span>
+<span class="comment">%____._____./  i21            i22</span>
+<span class="comment">%         i11</span>
+<span class="comment">%</span>
+<span class="comment">% Final state:</span>
+<span class="comment">%___.____.                           .____ Interphase 2</span>
+<span class="comment">%         \                         /</span>
+<span class="comment">%          \                       / .____ Interphase 1</span>
+<span class="comment">%           \                     / /i12</span>
+<span class="comment">%            \                   /_/</span>
+<span class="comment">%             \.______.____.___./</span>
+<span class="comment">%____._____._/ i21            i22</span>
+<span class="comment">%         i11</span>
+
+<span class="comment">%--------------------------------------------------------------------------</span>
+<span class="comment">% Function written by Miguel Andres-Martinez, Postdoc at University of</span>
+<span class="comment">% Bremen, 15-04-2019. Email: mandresmartinez87@gmail.com. Original idea by</span>
+<span class="comment">% Iskander Muldashev, Postdoc at University of Bremen.</span>
+<span class="comment">%--------------------------------------------------------------------------</span>
+
+minan = 15;
+
+<span class="comment">% Find interfaces to analyse in GEOMETRY</span>
+Gid = max(Geo_id)-1:-3:3;
+
+<span class="comment">% Factor to avoid constant remeshing when sediments are included in the</span>
+<span class="comment">% upper layer</span>
+sed_shift = 4/3;
+
+<span class="comment">% If update of upper layer is needed because of sediments</span>
+<span class="keyword">if</span> ~isempty(Base)
+    <span class="comment">% Get the top coordinates</span>
+    Top = GEOMETRY(:,Geo_id==Gid(1));
+    <span class="comment">% Get coordinates of the interface right below the top</span>
+    BelowTopInt = GEOMETRY(:,Geo_id==Gid(end-1));
+    OldBTI = BelowTopInt;
+
+    <span class="comment">% Interpolate y-coordinates of the top into the points from the</span>
+    <span class="comment">% interface below</span>
+    Dtop2below = interp1(Top(1,:),Top(2,:),BelowTopInt(1,:));
+    <span class="comment">% Find where this two layers are closer than SHIFT and might need</span>
+    <span class="comment">% updating</span>
+    disc = (Dtop2below-BelowTopInt(2,:))&lt;shift;
+    <span class="comment">% Interpolate the y-coordinates of the top basement into the points</span>
+    <span class="comment">% from the interface below</span>
+    Dbase2below = interp1(Base(1,:),Base(2,:),BelowTopInt(1,:));
+    <span class="comment">% Find where sediment thickness is larger than SHIFT multiplied by</span>
+    <span class="comment">% the sediment factor</span>
+    thickSed = (Dtop2below-Dbase2below)&gt;=(shift*sed_shift);
+    <span class="comment">% When sediment thickness is larger than SHIFT multiplied by the</span>
+    <span class="comment">% sediment factor and the layer is discontinuous redefine thickSed to</span>
+    <span class="comment">% mark the nodes where where sediment thickness is larger than SHIFT</span>
+    <span class="comment">% (with no sediment factor)</span>
+    <span class="keyword">if</span> any(disc &amp; thickSed)
+        thickSed = (Dtop2below-Dbase2below)&gt;=shift;
+    <span class="keyword">end</span>
+    <span class="comment">% Where both conditions are met update the y-coordinate of the</span>
+    <span class="comment">% interface below with the y-coordinate of the top basement</span>
+    [NodGeoMod,NodModOrd] = <span class="keyword">...</span>
+        ismember(GEOMETRY',BelowTopInt(:,disc &amp; thickSed)',<span class="string">'rows'</span>);
+    YcorrSed = Dbase2below(disc &amp; thickSed);
+    GEOMETRY(2,NodGeoMod' &amp; Geo_id~=Gid(1)) = <span class="keyword">...</span>
+        YcorrSed(NodModOrd(NodGeoMod' &amp; Geo_id~=Gid(1))');
+<span class="comment">%     BelowTopInt(2,disc &amp; thickSed) = Dbase2below(disc &amp; thickSed);</span>
+<span class="comment">%     GEOMETRY(:,Geo_id==Gid(end-1)) = BelowTopInt;</span>
+
+    <span class="comment">% Defines when remeshing is needed</span>
+    <span class="keyword">if</span> ~all(BelowTopInt(2,:)==OldBTI(2,:))
+        remesh = 1;
+        layer_corr = 1;
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+<span class="comment">% If multiple layers then loop through interfaces</span>
+<span class="keyword">for</span> m = 1:length(Gid)-1
+    <span class="comment">% Define current interfaces to evaluate</span>
+    layer1x = GEOMETRY(1,Geo_id==Gid(m+1));
+    layer1y = GEOMETRY(2,Geo_id==Gid(m+1));
+    layer2x = GEOMETRY(1,Geo_id==Gid(m));
+    layer2y = GEOMETRY(2,Geo_id==Gid(m));
+
+    <span class="comment">% Save old interfaces</span>
+    l1xo = layer1x;
+    l1yo = layer1y;
+
+    <span class="comment">% Add a vertical displacement to interface 1 to check if it interferes</span>
+    <span class="comment">% with the upper interface</span>
+    l1a = layer1y+shift;
+
+    <span class="comment">% Define interfaces in a matricial form</span>
+    L1 = [layer1x; l1a];
+    L2 = [layer2x; layer2y];
+
+    <span class="comment">% Find the points in both interfaces that are involved in their</span>
+    <span class="comment">% intersection. First row of indx_segment indexes points surrounding</span>
+    <span class="comment">% an intersection in interface 1. Second row of indx_segment indexes</span>
+    <span class="comment">% points surrounding an intersection in interface 2.</span>
+    [~,indx_segment] = intersect_lines(L1,L2);
+
+    <span class="comment">% Loop through segments of interface 1 that are above interface 2</span>
+    <span class="comment">% ---------------------------------------------------------------</span>
+    <span class="comment">% Initialisation</span>
+    l1x = [];
+    l1y = [];
+    i1 = 1;
+    layer_corr = 0;
+    <span class="comment">% Loop through the segments</span>
+    <span class="keyword">for</span> n = 1:size(indx_segment,2)/2
+        <span class="comment">% Define points next to intersections for the evaluated segment</span>
+        <span class="comment">%</span>
+        <span class="comment">%___.____.                           .____ Interphase 2</span>
+        <span class="comment">%         \                         /</span>
+        <span class="comment">%          \    .______.____.______/_.____ Interphase 1</span>
+        <span class="comment">%           \  /                  /  i12</span>
+        <span class="comment">%            \/                  /</span>
+        <span class="comment">%            /\.______.____.___./</span>
+        <span class="comment">%____._____./  i21            i22</span>
+        <span class="comment">%         i11</span>
+        <span class="comment">%</span>
+        <span class="comment">% Interphase 1</span>
+        i11 = indx_segment(1,n*2-1);
+        i12 = indx_segment(1,n*2)+1;
+        <span class="comment">% Interphase 2</span>
+        i21 = indx_segment(2,n*2-1)+1;
+        i22 = indx_segment(2,n*2);
+
+        <span class="comment">% Checking and correcting for wrong intersections due to the shift.</span>
+        <span class="comment">% Right intersections</span>
+        [p_prev,ind_prev] = intersect_lines([layer1x(i11-1:i11); <span class="keyword">...</span>
+            layer1y(i11-1:i11)],L2);
+        <span class="keyword">while</span> ~isempty(p_prev)
+            i11 = i11-1;
+            ind_prev = [ind_prev(2,1) ind_prev(2,1)+1];
+            p_prev = p_prev(:,1);
+            [~,mdind] = min(sqrt(sum((L2(:,ind_prev)-p_prev).^2)));
+            i21 = ind_prev(mdind);
+            [p_prev,ind_prev] = intersect_lines([layer1x(i11-1:i11); <span class="keyword">...</span>
+                layer1y(i11-1:i11)],L2);
+        <span class="keyword">end</span>
+
+        <span class="comment">% Checking and correcting for wrong intersections due to the shift.</span>
+        <span class="comment">% Left intersections</span>
+        [p_post,ind_post] = intersect_lines([layer1x(i12:i12+1); <span class="keyword">...</span>
+            layer1y(i12-1:i12)],L2);
+        <span class="keyword">while</span> ~isempty(p_post)
+            i12 = i12+1;
+            ind_post = [ind_post(2,end) ind_post(2,end)+1];
+            p_post = p_post(:,end);
+            [~,mdind] = min(sqrt(sum((L2(:,ind_post)-p_post).^2)));
+            i22 = ind_post(mdind);
+            [p_post,ind_post] = intersect_lines([layer1x(i12:i12+1); <span class="keyword">...</span>
+                layer1y(i12:i12+1)],L2);
+        <span class="keyword">end</span>
+
+        <span class="comment">% Add points in interface 1 from previous segment to the current</span>
+        <span class="comment">% intersection segment, and add to interface 1 also points of</span>
+        <span class="comment">% interface 2 between i21 and i22 (including them) that should</span>
+        <span class="comment">% substitute points of interface 1 between i11 and i12</span>
+        l1x = [l1x layer1x(i1:i11) layer2x(i21:i22)];
+        l1y = [l1y layer1y(i1:i11) layer2y(i21:i22)];
+        i1 = i12;
+    <span class="keyword">end</span>
+    <span class="comment">% Add the last non-intersected segment</span>
+    layer1x = [l1x layer1x(i1:end)];
+    layer1y = [l1y layer1y(i1:end)];
+
+    <span class="comment">% Redefine matrix interfaces</span>
+    L1 = [layer1x; layer1y];
+    L2 = [layer2x; layer2y];
+
+    <span class="comment">% Check for repeated points due to layers bending with inverted limbs</span>
+    L1 = unique(L1',<span class="string">'rows'</span>,<span class="string">'stable'</span>)';
+
+    <span class="comment">% If interfaces are changed then set remesh and layer_corr as 1, for</span>
+    <span class="comment">% remeshing</span>
+    <span class="keyword">if</span> size(L1,2)~=size(l1xo,2)
+        layer_corr = 1;
+        remesh = 1;
+    <span class="keyword">else</span>
+        <span class="keyword">if</span> ~all(all(L1==[l1xo; l1yo]))
+            layer_corr = 1;
+            remesh = 1;
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+
+    <span class="comment">% Modify GEOMETRY and Geo_id with the new calculated interfaces</span>
+    <span class="comment">% Interface 1</span>
+    GEOMETRY = [GEOMETRY(:,Geo_id&lt;Gid(m+1)) L1 <span class="keyword">...</span>
+        GEOMETRY(:,Geo_id&gt;Gid(m+1))];
+    Geo_id = [Geo_id(Geo_id&lt;Gid(m+1)) Gid(m+1)*ones(1,length(L1)) <span class="keyword">...</span>
+        Geo_id(Geo_id&gt;Gid(m+1))];
+    <span class="comment">% Interface 2</span>
+    GEOMETRY = [GEOMETRY(:,Geo_id&lt;Gid(m)) L2 GEOMETRY(:,Geo_id&gt;Gid(m))];
+    Geo_id = [Geo_id(Geo_id&lt;Gid(m)) Gid(m)*ones(1,length(L2)) <span class="keyword">...</span>
+        Geo_id(Geo_id&gt;Gid(m))];
+
+<span class="comment">%     % Plot (uncomment)</span>
+<span class="comment">%     plot(layer2x,layer2y,'o--')</span>
+<span class="comment">%     hold on</span>
+<span class="comment">%     plot(l1xo,l1yo,'.--')</span>
+<span class="comment">%     plot(layer2x,layer2y,'+','MarkerSize',30)</span>
+<span class="comment">%     plot(layer1x,layer1y,'o','MarkerSize',30)</span>
+<span class="keyword">end</span>
+
+<span class="keyword">for</span> n = 2:length(Gid)
+    cid = Gid(n);
+    int1x = GEOMETRY(1,Geo_id==cid);
+    int1y = GEOMETRY(2,Geo_id==cid);
+
+    <span class="comment">% Calculate angles</span>
+    vect = [diff(int1y); diff(int1x)];
+    v1 = -vect(:,1:end-1);
+    v2 = vect(:,2:end);
+    an = acosd(sum(v1.*v2)./(sqrt(sum(v1.^2)).*sqrt(sum(v2.^2))));
+    an = [Inf an Inf];
+    smallan = find(an&lt;minan);
+    midp = [sum(int1x(smallan+[1; -1]))/2; sum(int1y(smallan+[1; -1]))/2];
+    [Gp,~] = ismember(GEOMETRY',[int1x(smallan);int1y(smallan)]',<span class="string">'rows'</span>);
+    GEOMETRY(:,Gp) = [];
+    Geo_id(Gp) = [];
+    <span class="keyword">if</span> sum(Gp)&gt;0
+        remesh = 1;
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+<span class="comment">% Correct sharp angles</span>
+<span class="keyword">for</span> n = 2:length(Gid)
+    cid = Gid(n);
+    int1 = GEOMETRY(:,Geo_id==cid);
+    <span class="keyword">for</span> m = 1:n-1
+        int2 = [GEOMETRY(:,Geo_id==Gid(n-m))];
+        consecutive_juntions = true;
+        <span class="keyword">while</span> consecutive_juntions
+            repin1 = ismember(int1',int2',<span class="string">'rows'</span>)';
+            right = [false repin1(1:end-2) false];
+            left = [false repin1(3:end) false];
+            junctions1 = find(right~=left &amp; repin1);
+            repin2 = ismember(int2',int1',<span class="string">'rows'</span>)';
+            right = [false repin2(1:end-2) false];
+            left = [false repin2(3:end) false];
+            junctions2 = find(right~=left &amp; repin2);
+            junctions2 = unique([junctions2 <span class="keyword">...</span>
+                find(ismember(int2',int1(:,junctions1)',<span class="string">'rows'</span>))']);
+            junctions1 = unique([junctions1 <span class="keyword">...</span>
+                find(ismember(int1',int2(:,junctions2)',<span class="string">'rows'</span>))']);
+            indepint2 = ~ismember(int2(:,junctions2+1)',int1',<span class="string">'rows'</span>)'.*(junctions2+1);
+            indepint2(indepint2==0) = junctions2(indepint2==0)-1;
+            indepint1 = ~ismember(int1(:,junctions1+1)',int2',<span class="string">'rows'</span>)'.*(junctions1+1);
+            indepint1(indepint1==0) = junctions1(indepint1==0)-1;
+
+            junc_int = find(diff(junctions1)==1);
+            <span class="keyword">if</span> ~isempty(junc_int)
+                int1_fj = int1(:,1:junctions1(junc_int(1)));
+                <span class="keyword">for</span> fj = 1:length(junc_int)
+                    segment_above = int2(:,junctions2(junc_int(fj))+1: <span class="keyword">...</span>
+                        junctions2(junc_int(fj)+1)-1);
+                    <span class="keyword">if</span> fj==length(junc_int)
+                        next_int1 = int1(:,junctions1(junc_int(fj))+1:end);
+                    <span class="keyword">else</span>
+                        next_int1 = int1(:,junctions1(junc_int(fj))+1: <span class="keyword">...</span>
+                            junctions1(junc_int(fj+1)));
+                    <span class="keyword">end</span>
+                    int1_fj = [int1_fj segment_above next_int1];
+                <span class="keyword">end</span>
+                int1 = int1_fj;
+            <span class="keyword">else</span>
+                consecutive_juntions = false;
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+
+
+        vect = [diff(int1y); diff(int1x)];
+        v1 = int1(:,indepint1)-int1(:,junctions1);
+        v2 = int2(:,indepint2)-int1(:,junctions1);
+        an = acosd(sum(v1.*v2)./(sqrt(sum(v1.^2)).*sqrt(sum(v2.^2))));
+
+        smallan = find(an&lt;minan);
+        <span class="comment">% Small angle junctions in other interfaces</span>
+        Bel_ind = Gid(Gid&lt;cid);
+        clear <span class="string">IntBelow</span> <span class="string">JLI</span> <span class="string">JO</span>
+        <span class="keyword">for</span> ib = 1:length(Bel_ind)
+            IntBelow{ib} = GEOMETRY(:,Geo_id==Bel_ind(ib));
+            [JuncLowerInt,JuntOrd] = <span class="keyword">...</span>
+                ismember(IntBelow{ib}',int1(:,junctions1(smallan))',<span class="string">'rows'</span>);
+            JLI{ib} = find(JuncLowerInt');
+            JO{ib} = JuntOrd(JuncLowerInt)';
+        <span class="keyword">end</span>
+        <span class="keyword">for</span> o = 1:length(smallan)
+            remesh = 1;
+            jun1 = junctions1(smallan(o));
+            jun2 = junctions2(smallan(o));
+            ind1 = indepint1(smallan(o));
+            ind2 = indepint2(smallan(o));
+            juncleft = jun1&lt;ind1 &amp; jun2&lt;ind2;
+            juncright = jun1&gt;ind1 &amp; jun2&gt;ind2;
+
+            midp = (int1(:,jun1)+int2(:,ind2))/2;
+            <span class="keyword">if</span> juncleft
+                int1 = [int1(:,1:jun1) midp int1(:,jun1+1:end)];
+                int2 = [int2(:,1:jun2) midp int2(:,jun2+1:end)];
+                <span class="keyword">for</span> ib = 1:length(Bel_ind)
+                    O = find(JO{ib}==o);
+                    <span class="keyword">if</span> ~isempty(O)
+                        IntBelow{ib} = [IntBelow{ib}(:,1:JLI{ib}(O)) midp IntBelow{ib}(:,JLI{ib}(O)+1:end)];
+                        JLI{ib}(JLI{ib}&gt;JLI{ib}(O)) = JLI{ib}(JLI{ib}&gt;JLI{ib}(O))+1;
+                    <span class="keyword">end</span>
+                <span class="keyword">end</span>
+                junctions1(junctions1&gt;jun1) = <span class="keyword">...</span>
+                    junctions1(junctions1&gt;jun1)+1;
+                junctions2(junctions2&gt;jun2) = <span class="keyword">...</span>
+                    junctions2(junctions2&gt;jun2)+1;
+                indepint1(indepint1&gt;ind1) = <span class="keyword">...</span>
+                    indepint1(indepint1&gt;ind1)+1;
+                indepint2(indepint2&gt;ind2) = <span class="keyword">...</span>
+                    indepint2(indepint2&gt;ind2)+1;
+            <span class="keyword">elseif</span> juncright
+                int1 = [int1(:,1:jun1-1) midp int1(:,jun1:end)];
+                int2 = [int2(:,1:jun2-1) midp int2(:,jun2:end)];
+                <span class="keyword">for</span> ib = 1:length(Bel_ind)
+                    O = find(JO{ib}==o);
+                    <span class="keyword">if</span> ~isempty(O)
+                        IntBelow{ib} = [IntBelow{ib}(:,1:JLI{ib}(O)-1) midp IntBelow{ib}(:,JLI{ib}(O):end)];
+                        JLI{ib}(JLI{ib}&gt;JLI{ib}(O)) = JLI{ib}(JLI{ib}&gt;JLI{ib}(O))+1;
+                    <span class="keyword">end</span>
+                <span class="keyword">end</span>
+                junctions1(junctions1&gt;jun1) = <span class="keyword">...</span>
+                    junctions1(junctions1&gt;jun1)+1;
+                junctions2(junctions2&gt;jun2) = <span class="keyword">...</span>
+                    junctions2(junctions2&gt;jun2)+1;
+                indepint1(indepint1&gt;ind1) = <span class="keyword">...</span>
+                    indepint1(indepint1&gt;ind1)+1;
+                indepint2(indepint2&gt;ind2) = <span class="keyword">...</span>
+                    indepint2(indepint2&gt;ind2)+1;
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+        GEOMETRY = [GEOMETRY(:,Geo_id&lt;cid) int1 GEOMETRY(:,Geo_id&gt;cid)];
+        Geo_id = [Geo_id(Geo_id&lt;cid) cid*ones(1,size(int1,2)) <span class="keyword">...</span>
+            Geo_id(Geo_id&gt;cid)];
+        GEOMETRY = [GEOMETRY(:,Geo_id&lt;Gid(n-m)) int2 <span class="keyword">...</span>
+            GEOMETRY(:,Geo_id&gt;Gid(n-m))];
+        Geo_id = [Geo_id(Geo_id&lt;Gid(n-m)) Gid(n-m)*ones(1,size(int2,2)) <span class="keyword">...</span>
+            Geo_id(Geo_id&gt;Gid(n-m))];
+        <span class="keyword">for</span> ib = 1:length(Bel_ind)
+            GEOMETRY = [GEOMETRY(:,Geo_id&lt;Bel_ind(ib)) IntBelow{ib} <span class="keyword">...</span>
+                GEOMETRY(:,Geo_id&gt;Bel_ind(ib))];
+            Geo_id = [Geo_id(Geo_id&lt;Bel_ind(ib)) <span class="keyword">...</span>
+                Bel_ind(ib)*ones(1,size(IntBelow{ib},2)) <span class="keyword">...</span>
+                Geo_id(Geo_id&gt;Bel_ind(ib))];
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+
+
+<span class="keyword">end</span>
+
+<span class="keyword">for</span> n = 1:length(Gid)
+    GEOuni = unique(GEOMETRY(:,Geo_id==Gid(n))',<span class="string">'rows'</span>,<span class="string">'stable'</span>)';
+    GEOMETRY = [GEOMETRY(:,Geo_id&lt;Gid(n)) GEOuni <span class="keyword">...</span>
+        GEOMETRY(:,Geo_id&gt;Gid(n))];
+    Geo_id = [Geo_id(Geo_id&lt;Gid(n)) <span class="keyword">...</span>
+        Gid(n)*ones(1,size(GEOuni,2)) <span class="keyword">...</span>
+        Geo_id(Geo_id&gt;Gid(n))];
+<span class="keyword">end</span>
+</pre><pre class="codeoutput error">Not enough input arguments.
+
+Error in layer_collapse (line 63)
+Gid = max(Geo_id)-1:-3:3;
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2018b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+function [GEOMETRY,Geo_id,remesh,layer_corr] = ...
+            layer_collapse(GEOMETRY,Geo_id,Base,remesh,shift)
+% [GEOMETRY,GEO_ID,REMESH,LAYER_CORR] = layer_collapse(GEOMETRY,GEO_ID,
+% BASE,REMESH,SHIFT) takes the horizontal interfaces defined by GEOMETRY 
+% and GEO_ID, find where they interfere, or get vertically closer than 
+% SHIFT and merge these interfaces together. Collapsing of interfaces makes
+% Triangle library to understand that it should not generate elements for 
+% the collapsed layer in this area, so that discontinuous layers are 
+% created. In this way a reduction of the number of excesively
+% small elements is achieved together with the reduction of the ammount of
+% times remesh is needed. The function returns GEOMETRY and GEO_ID modified
+% with the interface collapse and REMESH and LAYER_CORR indicating if
+% interface correction had occured (LAYER_CORR = 1) and if remesh should be
+% triggered (REMESH = 1). When BASE is the top basement coordinates (and
+% not empty) updates the upper layer (i.e. the crust) to be of the same
+% thickness of the sediments when sediment thickness is >= SHIFT.
+%
+% Note I: It is recommended that SHIFT is bigger than at least 1/5 of the
+% maximum resolution of the interfaces to avoid elements with high angles
+% and constant remeshings (i.e. where resolution at interfaces is 1 km
+% SHIFT should be at lease 200 m).
+%
+% Note II: This algorithm can only work with layers that have at least 4
+% interfaces, because of the numbering assumed for the indentification of
+% interfaces 1 and 2.
+%
+% For this, the function finds intersections of the upper interfaces (2)
+% with the lower interfaces (1) + SHIFT. This intersections are then used 
+% to define segments where interface 1 + SHIFT is above interface 2, and
+% poitns surrounding the intersections (i11,i12,i21,i22). Then, points
+% between i11 and i12 are substituted by points between i21 and i22
+% (including them). 
+%
+% Initial state:
+%___.____.                           .____ Interphase 2
+%         \                         /
+%          \    .______.____.______/_.____ Interphase 1 + SHIFT
+%           \  /                  /  i12
+%            \/                  /
+%            /\.______.____.___./
+%____._____./  i21            i22
+%         i11
+%
+% Final state:
+%___.____.                           .____ Interphase 2
+%         \                         /
+%          \                       / .____ Interphase 1
+%           \                     / /i12
+%            \                   /_/
+%             \.______.____.___./
+%____._____._/ i21            i22
+%         i11
+
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+% Function written by Miguel Andres-Martinez, Postdoc at University of
+% Bremen, 15-04-2019. Email: mandresmartinez87@gmail.com. Original idea by
+% Iskander Muldashev, Postdoc at University of Bremen.
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+
+minan = 15;
+
+% Find interfaces to analyse in GEOMETRY
+Gid = max(Geo_id)-1:-3:3;
+
+% Factor to avoid constant remeshing when sediments are included in the
+% upper layer
+sed_shift = 4/3;
+
+% If update of upper layer is needed because of sediments
+if ~isempty(Base)
+    % Get the top coordinates
+    Top = GEOMETRY(:,Geo_id==Gid(1));
+    % Get coordinates of the interface right below the top
+    BelowTopInt = GEOMETRY(:,Geo_id==Gid(end-1));
+    OldBTI = BelowTopInt;
+    
+    % Interpolate y-coordinates of the top into the points from the
+    % interface below
+    Dtop2below = interp1(Top(1,:),Top(2,:),BelowTopInt(1,:));
+    % Find where this two layers are closer than SHIFT and might need
+    % updating
+    disc = (Dtop2below-BelowTopInt(2,:))<shift;
+    % Interpolate the y-coordinates of the top basement into the points
+    % from the interface below
+    Dbase2below = interp1(Base(1,:),Base(2,:),BelowTopInt(1,:));
+    % Find where sediment thickness is larger than SHIFT multiplied by
+    % the sediment factor
+    thickSed = (Dtop2below-Dbase2below)>=(shift*sed_shift);
+    % When sediment thickness is larger than SHIFT multiplied by the 
+    % sediment factor and the layer is discontinuous redefine thickSed to
+    % mark the nodes where where sediment thickness is larger than SHIFT
+    % (with no sediment factor)
+    if any(disc & thickSed)
+        thickSed = (Dtop2below-Dbase2below)>=shift;
+    end
+    % Where both conditions are met update the y-coordinate of the
+    % interface below with the y-coordinate of the top basement
+    [NodGeoMod,NodModOrd] = ...
+        ismember(GEOMETRY',BelowTopInt(:,disc & thickSed)','rows');
+    YcorrSed = Dbase2below(disc & thickSed);
+    GEOMETRY(2,NodGeoMod' & Geo_id~=Gid(1)) = ...
+        YcorrSed(NodModOrd(NodGeoMod' & Geo_id~=Gid(1))');
+%     BelowTopInt(2,disc & thickSed) = Dbase2below(disc & thickSed);
+%     GEOMETRY(:,Geo_id==Gid(end-1)) = BelowTopInt;
+    
+    % Defines when remeshing is needed
+    if ~all(BelowTopInt(2,:)==OldBTI(2,:))
+        remesh = 1;
+        layer_corr = 1;
+    end
+end
+
+% If multiple layers then loop through interfaces
+for m = 1:length(Gid)-1
+    % Define current interfaces to evaluate
+    layer1x = GEOMETRY(1,Geo_id==Gid(m+1));
+    layer1y = GEOMETRY(2,Geo_id==Gid(m+1));
+    layer2x = GEOMETRY(1,Geo_id==Gid(m));
+    layer2y = GEOMETRY(2,Geo_id==Gid(m));
+    
+    % Save old interfaces
+    l1xo = layer1x;
+    l1yo = layer1y;
+    
+    % Add a vertical displacement to interface 1 to check if it interferes
+    % with the upper interface
+    l1a = layer1y+shift;
+    
+    % Define interfaces in a matricial form
+    L1 = [layer1x; l1a];
+    L2 = [layer2x; layer2y];
+    
+    % Find the points in both interfaces that are involved in their
+    % intersection. First row of indx_segment indexes points surrounding
+    % an intersection in interface 1. Second row of indx_segment indexes
+    % points surrounding an intersection in interface 2.
+    [~,indx_segment] = intersect_lines(L1,L2);
+    
+    % Loop through segments of interface 1 that are above interface 2
+    % REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    % Initialisation
+    l1x = [];
+    l1y = [];
+    i1 = 1;
+    layer_corr = 0;
+    % Loop through the segments
+    for n = 1:size(indx_segment,2)/2
+        % Define points next to intersections for the evaluated segment
+        %
+        %___.____.                           .____ Interphase 2
+        %         \                         /
+        %          \    .______.____.______/_.____ Interphase 1
+        %           \  /                  /  i12
+        %            \/                  /
+        %            /\.______.____.___./
+        %____._____./  i21            i22
+        %         i11
+        %
+        % Interphase 1
+        i11 = indx_segment(1,n*2-1);
+        i12 = indx_segment(1,n*2)+1;
+        % Interphase 2
+        i21 = indx_segment(2,n*2-1)+1;
+        i22 = indx_segment(2,n*2);
+        
+        % Checking and correcting for wrong intersections due to the shift.
+        % Right intersections
+        [p_prev,ind_prev] = intersect_lines([layer1x(i11-1:i11); ...
+            layer1y(i11-1:i11)],L2);
+        while ~isempty(p_prev)
+            i11 = i11-1;
+            ind_prev = [ind_prev(2,1) ind_prev(2,1)+1];
+            p_prev = p_prev(:,1);
+            [~,mdind] = min(sqrt(sum((L2(:,ind_prev)-p_prev).^2)));
+            i21 = ind_prev(mdind);
+            [p_prev,ind_prev] = intersect_lines([layer1x(i11-1:i11); ...
+                layer1y(i11-1:i11)],L2);
+        end
+        
+        % Checking and correcting for wrong intersections due to the shift.
+        % Left intersections
+        [p_post,ind_post] = intersect_lines([layer1x(i12:i12+1); ...
+            layer1y(i12-1:i12)],L2);
+        while ~isempty(p_post)
+            i12 = i12+1;
+            ind_post = [ind_post(2,end) ind_post(2,end)+1];
+            p_post = p_post(:,end);
+            [~,mdind] = min(sqrt(sum((L2(:,ind_post)-p_post).^2)));
+            i22 = ind_post(mdind);
+            [p_post,ind_post] = intersect_lines([layer1x(i12:i12+1); ...
+                layer1y(i12:i12+1)],L2);
+        end
+                
+        % Add points in interface 1 from previous segment to the current
+        % intersection segment, and add to interface 1 also points of 
+        % interface 2 between i21 and i22 (including them) that should
+        % substitute points of interface 1 between i11 and i12
+        l1x = [l1x layer1x(i1:i11) layer2x(i21:i22)];
+        l1y = [l1y layer1y(i1:i11) layer2y(i21:i22)];
+        i1 = i12;
+    end
+    % Add the last non-intersected segment
+    layer1x = [l1x layer1x(i1:end)];
+    layer1y = [l1y layer1y(i1:end)];
+    
+    % Redefine matrix interfaces 
+    L1 = [layer1x; layer1y];
+    L2 = [layer2x; layer2y];
+    
+    % Check for repeated points due to layers bending with inverted limbs
+    L1 = unique(L1','rows','stable')';
+    
+    % If interfaces are changed then set remesh and layer_corr as 1, for
+    % remeshing
+    if size(L1,2)~=size(l1xo,2)
+        layer_corr = 1;
+        remesh = 1;
+    else
+        if ~all(all(L1==[l1xo; l1yo]))
+            layer_corr = 1;
+            remesh = 1;
+        end
+    end
+    
+    % Modify GEOMETRY and Geo_id with the new calculated interfaces
+    % Interface 1
+    GEOMETRY = [GEOMETRY(:,Geo_id<Gid(m+1)) L1 ...
+        GEOMETRY(:,Geo_id>Gid(m+1))];
+    Geo_id = [Geo_id(Geo_id<Gid(m+1)) Gid(m+1)*ones(1,length(L1)) ...
+        Geo_id(Geo_id>Gid(m+1))];
+    % Interface 2
+    GEOMETRY = [GEOMETRY(:,Geo_id<Gid(m)) L2 GEOMETRY(:,Geo_id>Gid(m))];
+    Geo_id = [Geo_id(Geo_id<Gid(m)) Gid(m)*ones(1,length(L2)) ...
+        Geo_id(Geo_id>Gid(m))];
+    
+%     % Plot (uncomment)
+%     plot(layer2x,layer2y,'oREPLACE_WITH_DASH_DASH')
+%     hold on
+%     plot(l1xo,l1yo,'.REPLACE_WITH_DASH_DASH')
+%     plot(layer2x,layer2y,'+','MarkerSize',30)
+%     plot(layer1x,layer1y,'o','MarkerSize',30)
+end
+
+for n = 2:length(Gid)
+    cid = Gid(n);
+    int1x = GEOMETRY(1,Geo_id==cid);
+    int1y = GEOMETRY(2,Geo_id==cid);
+    
+    % Calculate angles
+    vect = [diff(int1y); diff(int1x)];
+    v1 = -vect(:,1:end-1);
+    v2 = vect(:,2:end);
+    an = acosd(sum(v1.*v2)./(sqrt(sum(v1.^2)).*sqrt(sum(v2.^2))));
+    an = [Inf an Inf];
+    smallan = find(an<minan);
+    midp = [sum(int1x(smallan+[1; -1]))/2; sum(int1y(smallan+[1; -1]))/2];
+    [Gp,~] = ismember(GEOMETRY',[int1x(smallan);int1y(smallan)]','rows');
+    GEOMETRY(:,Gp) = [];
+    Geo_id(Gp) = [];
+    if sum(Gp)>0
+        remesh = 1;
+    end
+end
+
+% Correct sharp angles
+for n = 2:length(Gid)
+    cid = Gid(n);
+    int1 = GEOMETRY(:,Geo_id==cid);
+    for m = 1:n-1
+        int2 = [GEOMETRY(:,Geo_id==Gid(n-m))];
+        consecutive_juntions = true;
+        while consecutive_juntions
+            repin1 = ismember(int1',int2','rows')';
+            right = [false repin1(1:end-2) false];
+            left = [false repin1(3:end) false];
+            junctions1 = find(right~=left & repin1);
+            repin2 = ismember(int2',int1','rows')';
+            right = [false repin2(1:end-2) false];
+            left = [false repin2(3:end) false];
+            junctions2 = find(right~=left & repin2);
+            junctions2 = unique([junctions2 ...
+                find(ismember(int2',int1(:,junctions1)','rows'))']);
+            junctions1 = unique([junctions1 ...
+                find(ismember(int1',int2(:,junctions2)','rows'))']);
+            indepint2 = ~ismember(int2(:,junctions2+1)',int1','rows')'.*(junctions2+1);
+            indepint2(indepint2==0) = junctions2(indepint2==0)-1;
+            indepint1 = ~ismember(int1(:,junctions1+1)',int2','rows')'.*(junctions1+1);
+            indepint1(indepint1==0) = junctions1(indepint1==0)-1;
+            
+            junc_int = find(diff(junctions1)==1);
+            if ~isempty(junc_int)
+                int1_fj = int1(:,1:junctions1(junc_int(1)));
+                for fj = 1:length(junc_int)
+                    segment_above = int2(:,junctions2(junc_int(fj))+1: ...
+                        junctions2(junc_int(fj)+1)-1);
+                    if fj==length(junc_int)
+                        next_int1 = int1(:,junctions1(junc_int(fj))+1:end);
+                    else
+                        next_int1 = int1(:,junctions1(junc_int(fj))+1: ...
+                            junctions1(junc_int(fj+1)));
+                    end
+                    int1_fj = [int1_fj segment_above next_int1];
+                end
+                int1 = int1_fj;
+            else
+                consecutive_juntions = false;
+            end
+        end
+        
+        
+        vect = [diff(int1y); diff(int1x)];
+        v1 = int1(:,indepint1)-int1(:,junctions1);
+        v2 = int2(:,indepint2)-int1(:,junctions1);
+        an = acosd(sum(v1.*v2)./(sqrt(sum(v1.^2)).*sqrt(sum(v2.^2))));
+        
+        smallan = find(an<minan);
+        % Small angle junctions in other interfaces
+        Bel_ind = Gid(Gid<cid);
+        clear IntBelow JLI JO
+        for ib = 1:length(Bel_ind)
+            IntBelow{ib} = GEOMETRY(:,Geo_id==Bel_ind(ib));
+            [JuncLowerInt,JuntOrd] = ...
+                ismember(IntBelow{ib}',int1(:,junctions1(smallan))','rows');
+            JLI{ib} = find(JuncLowerInt');
+            JO{ib} = JuntOrd(JuncLowerInt)';
+        end
+        for o = 1:length(smallan)
+            remesh = 1;
+            jun1 = junctions1(smallan(o));
+            jun2 = junctions2(smallan(o));
+            ind1 = indepint1(smallan(o));
+            ind2 = indepint2(smallan(o));
+            juncleft = jun1<ind1 & jun2<ind2;
+            juncright = jun1>ind1 & jun2>ind2;
+            
+            midp = (int1(:,jun1)+int2(:,ind2))/2;
+            if juncleft
+                int1 = [int1(:,1:jun1) midp int1(:,jun1+1:end)];
+                int2 = [int2(:,1:jun2) midp int2(:,jun2+1:end)];
+                for ib = 1:length(Bel_ind)
+                    O = find(JO{ib}==o);
+                    if ~isempty(O)
+                        IntBelow{ib} = [IntBelow{ib}(:,1:JLI{ib}(O)) midp IntBelow{ib}(:,JLI{ib}(O)+1:end)];
+                        JLI{ib}(JLI{ib}>JLI{ib}(O)) = JLI{ib}(JLI{ib}>JLI{ib}(O))+1;
+                    end
+                end
+                junctions1(junctions1>jun1) = ...
+                    junctions1(junctions1>jun1)+1;
+                junctions2(junctions2>jun2) = ...
+                    junctions2(junctions2>jun2)+1;
+                indepint1(indepint1>ind1) = ...
+                    indepint1(indepint1>ind1)+1;
+                indepint2(indepint2>ind2) = ...
+                    indepint2(indepint2>ind2)+1;
+            elseif juncright
+                int1 = [int1(:,1:jun1-1) midp int1(:,jun1:end)];
+                int2 = [int2(:,1:jun2-1) midp int2(:,jun2:end)];
+                for ib = 1:length(Bel_ind)
+                    O = find(JO{ib}==o);
+                    if ~isempty(O)
+                        IntBelow{ib} = [IntBelow{ib}(:,1:JLI{ib}(O)-1) midp IntBelow{ib}(:,JLI{ib}(O):end)];
+                        JLI{ib}(JLI{ib}>JLI{ib}(O)) = JLI{ib}(JLI{ib}>JLI{ib}(O))+1;
+                    end
+                end
+                junctions1(junctions1>jun1) = ...
+                    junctions1(junctions1>jun1)+1;
+                junctions2(junctions2>jun2) = ...
+                    junctions2(junctions2>jun2)+1;
+                indepint1(indepint1>ind1) = ...
+                    indepint1(indepint1>ind1)+1;
+                indepint2(indepint2>ind2) = ...
+                    indepint2(indepint2>ind2)+1;
+            end
+        end
+        GEOMETRY = [GEOMETRY(:,Geo_id<cid) int1 GEOMETRY(:,Geo_id>cid)];
+        Geo_id = [Geo_id(Geo_id<cid) cid*ones(1,size(int1,2)) ...
+            Geo_id(Geo_id>cid)];
+        GEOMETRY = [GEOMETRY(:,Geo_id<Gid(n-m)) int2 ...
+            GEOMETRY(:,Geo_id>Gid(n-m))];
+        Geo_id = [Geo_id(Geo_id<Gid(n-m)) Gid(n-m)*ones(1,size(int2,2)) ...
+            Geo_id(Geo_id>Gid(n-m))];
+        for ib = 1:length(Bel_ind)
+            GEOMETRY = [GEOMETRY(:,Geo_id<Bel_ind(ib)) IntBelow{ib} ... 
+                GEOMETRY(:,Geo_id>Bel_ind(ib))];
+            Geo_id = [Geo_id(Geo_id<Bel_ind(ib)) ...
+                Bel_ind(ib)*ones(1,size(IntBelow{ib},2)) ...
+                Geo_id(Geo_id>Bel_ind(ib))];
+        end
+    end
+    
+    
+end
+
+for n = 1:length(Gid)
+    GEOuni = unique(GEOMETRY(:,Geo_id==Gid(n))','rows','stable')';
+    GEOMETRY = [GEOMETRY(:,Geo_id<Gid(n)) GEOuni ...
+        GEOMETRY(:,Geo_id>Gid(n))];
+    Geo_id = [Geo_id(Geo_id<Gid(n)) ...
+        Gid(n)*ones(1,size(GEOuni,2)) ...
+        Geo_id(Geo_id>Gid(n))];
+end
+
+
+
+
+
+
+##### SOURCE END #####
+--></body></html>
