@@ -2,7 +2,7 @@
 % matlab -nosplash -nodisplay -batch "pid=0;call_main" -logfile rift2ridge2D.log   # batch mode
 
 HOME    = getenv('HOME');
-MODEL   = "rift2ridge2D";
+MODEL   = "Rift2Ridge";
 VERSION = "SIU3P";
 
 region  = "COT";
